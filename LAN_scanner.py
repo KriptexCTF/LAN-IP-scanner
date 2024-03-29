@@ -61,10 +61,11 @@ def find_mac(os_name):
 			mac_len = 0
 			skip = arp.find(ip_mac[i][0])
 			mac_skip = arp.find("at", skip) + 3
-			while(arp[mac_skip + mac_len] != ' '):
-				mac += arp[mac_skip + mac_len]
-				mac_len += 1
-			ip_mac[i][1] = mac
+			if(mac_skip + mac_len < len(arp)):
+				while(arp[mac_skip + mac_len] != ' '):
+					mac += arp[mac_skip + mac_len]
+					mac_len += 1
+				ip_mac[i][1] = mac
 	elif(os_name == "WINDOWS" or os_name == "linux"):
 		arp = os.popen("arp -a")
 		arp = arp.read()
@@ -81,6 +82,7 @@ def find_mac(os_name):
 	else:
 		print("ERROR unknown OS!")
 		exit(0)
+		
 print("Choose your mode!")
 print("""subnet mask
 1) 24 -- 255.255.255.0
