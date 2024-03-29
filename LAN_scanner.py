@@ -82,17 +82,18 @@ def find_mac(os_name):
 	else:
 		print("ERROR unknown OS!")
 		exit(0)
-		
 print("Choose your mode!")
 print("""subnet mask
 1) 24 -- 255.255.255.0
-2) 20 -- 255.255.240.0""")
+2) 20 -- 255.255.240.0
+3) 16 -- 255.255.0.0""")
 while(True):
 	mode = int(input("=> "))
 	if(mode != 1, 2):
 		break
 if(mode == 1):mode=8
 if(mode == 2):mode=12
+if(mode == 3):mode=16
 start_time = time.time()
 ip = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 ip.connect(("8.8.8.8", 80))
