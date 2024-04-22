@@ -53,7 +53,7 @@ def SCAN_IP(i, j):
 def find_mac(os_name):
 	global ip_mac
 	global total
-	if(os_name == "MAC OS"):
+	if(os_name == "MAC OS" or os_name == "linux"):
 		arp = os.popen("arp -a")
 		arp = arp.read()
 		for i in range(1, total):
@@ -66,7 +66,7 @@ def find_mac(os_name):
 					mac += arp[mac_skip + mac_len]
 					mac_len += 1
 				ip_mac[i][1] = mac
-	elif(os_name == "WINDOWS" or os_name == "linux"):
+	elif(os_name == "WINDOWS"):
 		arp = os.popen("arp -a")
 		arp = arp.read()
 		for i in range(1, total):
