@@ -73,12 +73,14 @@ def find_mac(os_name):
 			mac = ""
 			mac_len = 0
 			skip = arp.find(ip_mac[i][0])
-			mac_skip = 0
-			while(arp[mac_skip + mac_skip] == ' '):
+			mac_skip = skip + len(ip_mac[i][0])
+			while(arp[mac_skip] == ' '):
 				mac_skip += 1
-			while(arp[mac_skip + mac_skip] != ' '):
-				mac += arp[mac_skip + mac_len]
-				mac_len += 1
+			if(mac_skip + mac_len < len(arp)):
+				while(arp[mac_skip + mac_len] != ' '):
+					mac += arp[mac_skip + mac_len]
+					mac_len += 1
+				ip_mac[i][1] = mac
 	else:
 		print("ERROR unknown OS!")
 		exit(0)
@@ -110,12 +112,12 @@ threads = []*threads_limit
 count = 0
 
 suffix = '%(percent)d%%'
-bar = IncrementalBar('Progress', max = 2**mode-2, suffix=suffix)
+#bar = IncrementalBar('Progress', max = 2**mode-2, suffix=suffix)
 for i in range(0, int((2**mode)/256)):
 	for j in range(1, 255):
 		try:
 			if(((i == int(ip_split[2])) and (j == int(ip_split[3]))) or ((mode <= 8) and (j == int(ip_split[3])))):
-				bar.next()
+				#bar.next()
 				continue
 			if(len(threads) % threads_limit == 0):
 				save_len = len(threads)
@@ -138,12 +140,12 @@ for i in range(0, int((2**mode)/256)):
 			flow = threading.Thread(target=SCAN_IP, args=[i, j])
 			flow.start()
 			time.sleep(0.001)
-			bar.next()
+			#bar.next()
 			threads.append(flow)
 			count += 1
 		except ValueError:
 			print('')
-bar.finish()
+#bar.finish()
 while(True):
 	for thread in threads:
 		if(thread.is_alive() == 0):
