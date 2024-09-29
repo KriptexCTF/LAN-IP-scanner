@@ -1,3 +1,4 @@
+import struct
 import os
 from sys import platform
 import socket
@@ -5,12 +6,36 @@ from colorama import Fore, Style
 import threading
 import time
 import uuid
-from progress.bar import IncrementalBar
 from icmplib import ping
-
+import sys
 threads_limit = 100 # Ограничение потоков
 total = 1
 ip_mac=[[0 for a in range(-1,1)] for b in range(1)]
+
+def ip_key(ip):
+    return struct.unpack("!I", socket.inet_aton(ip))[0]
+
+class ProgressBar:
+    def __init__(self, total):
+        self.total = total
+        self.progress = 0
+
+    def next(self):
+        if self.progress < self.total:
+            self.progress += 1
+            self.show()
+
+    def show(self):
+        percent = (self.progress / self.total) * 100
+        bar_length = 23
+        filled_length = int(bar_length * self.progress // self.total)
+        bar = (Fore.GREEN+'#'+Style.RESET_ALL) * filled_length + '-' * (bar_length - filled_length)
+        sys.stdout.write(f'\r[{bar}] {percent:.2f}%')
+        sys.stdout.flush()
+
+    def clear(self):
+        sys.stdout.write('\r' + ' ' * (50 + 20) + '\r')  # Очистка строки
+        sys.stdout.flush()
 
 def OS_NAME():
 	if (platform == "linux" or platform == "linux2"):
@@ -29,7 +54,7 @@ def add_ip(ip, total):
 	global ip_mac
 	ip_mac.append([0]*2)
 	ip_mac[total][0] = ip
-	
+
 def beautiful_print(ip_mac, ip):
 	for i in ip_mac:
 		if(i[0] != ip):
@@ -42,9 +67,6 @@ def SCAN_IP(i, j):
 	p = '.'
 	flag = 0
 	need_ip = ip_split[0] + p + ip_split[1] + p + str(i) + p + str(j)
-	#command = ping_com + need_ip
-	#response = os.popen(command)
-	#data = response.readlines()
 	host = ping(need_ip, count=1, interval=0.2)
 	if(host.is_alive):
 		add_ip(need_ip, total)
@@ -53,7 +75,7 @@ def SCAN_IP(i, j):
 def find_mac(os_name):
 	global ip_mac
 	global total
-	if(os_name == "MAC OS" or os_name == "linux"):
+	if(os_name == "MAC OS"):
 		arp = os.popen("arp -a")
 		arp = arp.read()
 		for i in range(1, total):
@@ -66,24 +88,23 @@ def find_mac(os_name):
 					mac += arp[mac_skip + mac_len]
 					mac_len += 1
 				ip_mac[i][1] = mac
-	elif(os_name == "WINDOWS"):
+	elif(os_name == "WINDOWS" or os_name == "linux"):
 		arp = os.popen("arp -a")
 		arp = arp.read()
 		for i in range(1, total):
 			mac = ""
 			mac_len = 0
 			skip = arp.find(ip_mac[i][0])
-			mac_skip = skip + len(ip_mac[i][0])
-			while(arp[mac_skip] == ' '):
+			mac_skip = 0
+			while(arp[mac_skip + mac_skip] == ' '):
 				mac_skip += 1
-			if(mac_skip + mac_len < len(arp)):
-				while(arp[mac_skip + mac_len] != ' '):
-					mac += arp[mac_skip + mac_len]
-					mac_len += 1
-				ip_mac[i][1] = mac
+			while(arp[mac_skip + mac_skip] != ' '):
+				mac += arp[mac_skip + mac_len]
+				mac_len += 1
 	else:
 		print("ERROR unknown OS!")
 		exit(0)
+	ip_mac.sort(key=lambda x: ip_key(x[0]))
 print("Choose your mode!")
 print("""subnet mask
 1) 24 -- 255.255.255.0
@@ -111,8 +132,10 @@ ip_split = ip.split('.')
 threads = []*threads_limit
 count = 0
 
-suffix = '%(percent)d%%'
-bar = IncrementalBar('Progress', max = 2**mode-2, suffix=suffix)
+max = 2**mode-2
+patrs = -(-max//25)
+bar = ProgressBar(max)
+bar.show()
 for i in range(0, int((2**mode)/256)):
 	for j in range(1, 255):
 		try:
@@ -145,12 +168,14 @@ for i in range(0, int((2**mode)/256)):
 			count += 1
 		except ValueError:
 			print('')
-bar.finish()
+
 while(True):
 	for thread in threads:
 		if(thread.is_alive() == 0):
+			bar.next()
 			threads.remove(thread)
 	if(not(len(threads))):
+		bar.clear()
 		find_mac(os_name)
 		beautiful_print(ip_mac, ip)
 		stop_time = time.time()
